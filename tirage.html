@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tirage Oracle — Magical Chart</title>
+  <meta name="description" content="Tirez les cartes de l'oracle Magical Chart et recevez une lecture bienveillante." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg:        #0d0d1a;
+      --bg2:       #12122a;
+      --bg3:       #1a1a35;
+      --lav:       #b8a9e0;
+      --rose:      #e8c4d4;
+      --frost:     #dcd8f5;
+      --silver:    #a8a4c8;
+      --moon:      #f5f0ff;
+      --lilac:     #c9b8f0;
+      --blush:     #f0d8e8;
+      --gold:      #c9a870;
+      --gold-s:    #d4b896;
+      --glav:      #d0b8ff;
+      --grose:     #ffb8d8;
+      --dv:        #3d2e6e;
+      --mv:        #6b5a9e;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg); color: var(--frost);
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      overflow-x: hidden; min-height: 100vh;
+    }
+    body::before {
+      content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+      background:
+        radial-gradient(ellipse 60% 40% at 20% 20%, rgba(180,140,240,.06) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 35% at 80% 70%, rgba(240,180,210,.05) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 50% 50%, rgba(140,120,200,.04) 0%, transparent 70%);
+    }
+    #stars { position:fixed; inset:0; z-index:0; pointer-events:none; }
+    #cursor { display:none; }
+    @media(hover:hover) and (pointer:fine){
+      body { cursor:none; }
+      #cursor {
+        display:block; width:10px; height:10px;
+        background:var(--glav); border-radius:50%;
+        position:fixed; top:0; left:0; pointer-events:none; z-index:9999;
+        box-shadow:0 0 12px var(--glav),0 0 30px rgba(200,170,255,.4);
+        transition:transform .08s;
+      }
+    }
+
+    /* ── NAV ── */
+    nav {
+      position:fixed; top:0; left:0; right:0; z-index:200;
+      display:flex; justify-content:space-between; align-items:center;
+      padding:1.1rem 3rem;
+      background:linear-gradient(to bottom,#0d0d1aee,transparent);
+      backdrop-filter:blur(6px);
+    }
+    .nav-logo { font-family:'Cinzel Decorative',serif; font-size:.78rem; letter-spacing:.22em; color:var(--lav); text-decoration:none; }
+    .nav-links { display:flex; gap:2rem; list-style:none; }
+    .nav-links a { font-family:'Cormorant Garamond',serif; font-size:.82rem; font-style:italic; letter-spacing:.07em; color:var(--silver); text-decoration:none; transition:color .3s; }
+    .nav-links a:hover { color:var(--moon); }
+    .nav-burger { display:none; flex-direction:column; gap:5px; width:34px; height:34px; background:none; border:none; cursor:pointer; padding:4px; }
+    .nav-burger span { display:block; height:1.5px; background:var(--lav); border-radius:2px; }
+    @media(max-width:768px){ .nav-links{display:none;} .nav-burger{display:flex;} body{cursor:auto;} }
+
+    /* ── WRAPPER ── */
+    .wrapper { position:relative; z-index:2; padding-top:88px; padding-bottom:4rem; }
+
+    /* ── HEADER ── */
+    .page-header { text-align:center; padding:3rem 2rem 1.5rem; }
+    .page-eyebrow { font-style:italic; font-size:.85rem; letter-spacing:.2em; color:var(--rose); opacity:.7; margin-bottom:.9rem; }
+    .page-title {
+      font-family:'Cinzel Decorative',serif; font-size:clamp(1.5rem,4.5vw,2.7rem);
+      color:var(--moon); letter-spacing:.06em; line-height:1.2; margin-bottom:.6rem;
+      text-shadow:0 0 30px rgba(180,140,255,.28),0 0 60px rgba(180,140,255,.1);
+    }
+    .page-title small { display:block; font-size:.38em; color:var(--gold-s); letter-spacing:.35em; margin-top:.5em; font-weight:400; font-family:'Cormorant Garamond',serif; }
+    .page-sub { font-size:1rem; font-style:italic; color:var(--silver); max-width:430px; margin:1rem auto 0; line-height:1.8; }
+    .hdr-orn { margin:1.4rem auto 0; display:flex; align-items:center; justify-content:center; gap:.7rem; max-width:220px; }
+    .orn-l { flex:1; height:1px; background:linear-gradient(to right,transparent,rgba(180,160,224,.3),transparent); }
+    .orn-s { color:var(--lav); font-size:.6rem; opacity:.55; }
+
+    /* ── SPREAD SELECTOR ── */
+    .spread-sec { max-width:680px; margin:2.5rem auto 0; padding:0 2rem; text-align:center; }
+    .spread-lbl { font-style:italic; font-size:.82rem; letter-spacing:.15em; color:var(--lav); opacity:.55; margin-bottom:1.2rem; }
+    .spread-opts { display:flex; justify-content:center; gap:.8rem; flex-wrap:wrap; }
+    .sbtn {
+      padding:.72rem 1.5rem; border:1px solid rgba(180,160,224,.2);
+      background:rgba(255,255,255,.02); color:var(--silver);
+      font-family:'Cormorant Garamond',serif; font-style:italic; font-size:.9rem; letter-spacing:.05em;
+      cursor:pointer; transition:all .35s; border-radius:40px; backdrop-filter:blur(4px);
+    }
+    .sbtn:hover { border-color:rgba(210,180,255,.5); color:var(--moon); background:rgba(180,140,255,.06); box-shadow:0 0 18px rgba(180,140,255,.1); }
+    .sbtn.active { border-color:rgba(210,180,255,.6); color:var(--lilac); background:rgba(180,140,255,.1); box-shadow:0 0 20px rgba(180,140,255,.14),inset 0 0 10px rgba(180,140,255,.05); }
+    .sbtn small { display:block; font-family:'Cinzel Decorative',serif; font-style:normal; font-size:.44rem; letter-spacing:.15em; opacity:.55; margin-top:2px; }
+
+    /* ── ORACLE AREA ── */
+    .oracle-area { max-width:1100px; margin:2.5rem auto 0; padding:0 1.5rem; min-height:380px; }
+
+    /* ── DECK PILE ── */
+    .deck-cont { display:flex; flex-direction:column; align-items:center; gap:2rem; padding:1rem 0 2rem; }
+    .deck-pile { position:relative; width:154px; height:252px; cursor:pointer; }
+    .deck-shadow {
+      position:absolute; bottom:-16px; left:50%; transform:translateX(-50%);
+      width:110px; height:18px;
+      background:radial-gradient(ellipse,rgba(100,80,160,.3),transparent 70%);
+      filter:blur(8px); border-radius:50%;
+    }
+    .dp-card {
+      position:absolute; inset:0; border-radius:14px;
+      background:linear-gradient(135deg,#16142e,#1e1a42 40%,#14123a 70%,#0e0c28);
+      border:1px solid rgba(180,160,224,.14);
+      transition:transform .4s cubic-bezier(.34,1.2,.64,1),box-shadow .4s;
+    }
+    .dp-card:nth-child(2){transform:translateY(0) rotate(-2.5deg); box-shadow:0 2px 12px rgba(0,0,0,.4);}
+    .dp-card:nth-child(3){transform:translateY(-3px) rotate(0); box-shadow:0 4px 16px rgba(0,0,0,.4);}
+    .dp-card:nth-child(4){transform:translateY(-6px) rotate(2deg); box-shadow:0 6px 20px rgba(0,0,0,.4);}
+    .dp-card.top {
+      transform:translateY(-10px) rotate(0);
+      border-color:rgba(200,170,255,.28);
+      box-shadow:0 0 24px rgba(180,140,255,.18),0 0 48px rgba(180,140,255,.07),0 12px 32px rgba(0,0,0,.5);
+    }
+    .deck-pile:hover .dp-card.top {
+      transform:translateY(-22px) scale(1.04);
+      box-shadow:0 0 40px rgba(210,180,255,.28),0 0 80px rgba(180,140,255,.1),0 16px 40px rgba(0,0,0,.6);
+    }
+    .dp-back {
+      position:absolute; inset:8px; border-radius:8px;
+      border:1px solid rgba(180,160,224,.1);
+      display:flex; align-items:center; justify-content:center; overflow:hidden;
+    }
+    .dp-back svg { width:88%; height:88%; opacity:.42; }
+
+    .draw-cta { display:flex; flex-direction:column; align-items:center; gap:.8rem; }
+    .draw-btn {
+      padding:.9rem 2.8rem; border:1px solid rgba(200,170,255,.33);
+      background:rgba(180,140,255,.05); color:var(--lilac);
+      font-family:'Cormorant Garamond',serif; font-style:italic;
+      font-size:1.1rem; letter-spacing:.08em;
+      cursor:pointer; border-radius:40px; transition:all .4s; backdrop-filter:blur(6px);
+      animation:sPulse 4s ease-in-out infinite;
+    }
+    @keyframes sPulse{0%,100%{box-shadow:0 0 12px rgba(200,170,255,.1);}50%{box-shadow:0 0 28px rgba(200,170,255,.24),0 0 50px rgba(200,170,255,.07);}}
+    .draw-btn:hover { background:rgba(180,140,255,.12); color:var(--moon); border-color:rgba(220,190,255,.6); box-shadow:0 0 36px rgba(200,170,255,.28); }
+    .draw-hint { font-size:.8rem; font-style:italic; color:var(--silver); opacity:.5; max-width:270px; text-align:center; line-height:1.6; }
+
+    /* ── SPREAD LAYOUT ── */
+    .spread-layout { display:none; flex-direction:column; align-items:center; gap:2.5rem; animation:fuUp .7s ease both; }
+    .spread-layout.visible { display:flex; }
+    @keyframes fuUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+
+    .cards-row { display:flex; justify-content:center; gap:1.2rem; flex-wrap:wrap; width:100%; }
+
+    /* ── ORACLE CARD ── */
+    .oc-wrap {
+      display:flex; flex-direction:column; align-items:center; gap:.7rem;
+      opacity:0; transform:translateY(22px) scale(.9);
+      transition:opacity .65s ease,transform .8s cubic-bezier(.34,1.3,.64,1);
+    }
+    .oc-wrap.shown { opacity:1; transform:translateY(0) scale(1); }
+    .pos-lbl { font-style:italic; font-size:.7rem; letter-spacing:.12em; color:var(--rose); opacity:.72; }
+    .oc {
+      width:148px; height:240px; border-radius:16px; position:relative; overflow:hidden;
+      background:linear-gradient(145deg,#16122e,#1c1840 35%,#201a48 55%,#140e30 85%,#0e0c26);
+      box-shadow:0 0 28px rgba(180,140,255,.16),0 16px 36px rgba(0,0,0,.6),inset 0 0 30px rgba(140,110,200,.04);
+      transition:transform .4s,box-shadow .4s;
+    }
+    .oc:hover { transform:translateY(-5px) scale(1.02); box-shadow:0 0 44px rgba(200,170,255,.26),0 24px 48px rgba(0,0,0,.7); }
+
+    .oc-fo {
+      position:absolute; inset:7px; border-radius:11px; border:1px solid transparent;
+      background:linear-gradient(135deg,rgba(200,180,255,.38),rgba(240,200,220,.28),rgba(160,140,220,.18),rgba(200,180,255,.38)) border-box;
+      -webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);
+      -webkit-mask-composite:destination-out; mask-composite:exclude;
+      z-index:10; pointer-events:none;
+    }
+    .oc-fi { position:absolute; inset:12px; border-radius:7px; border:.5px solid rgba(200,180,255,.1); z-index:10; pointer-events:none; }
+
+    .oc-nb { position:absolute; border-radius:50%; filter:blur(28px); z-index:1; animation:nbP 8s ease-in-out infinite; }
+    .nb1{width:130px;height:130px;top:-30px;left:-30px;background:radial-gradient(circle,rgba(160,120,220,.26),transparent 65%);}
+    .nb2{width:100px;height:100px;bottom:-20px;right:-20px;background:radial-gradient(circle,rgba(220,160,200,.18),transparent 65%);animation-delay:-3s;}
+    .nb3{width:80px;height:80px;top:50%;left:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(180,160,255,.07),transparent 65%);animation-delay:-6s;}
+    @keyframes nbP{0%,100%{opacity:.6}50%{opacity:1}}
+    .oc-st { position:absolute; inset:0; z-index:2; pointer-events:none; }
+
+    .oc-cnt { position:absolute; inset:0; z-index:15; display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:17px 10px 13px; }
+    .oc-orn { display:flex; align-items:center; gap:5px; width:100%; }
+    .ol { flex:1; height:1px; background:linear-gradient(to right,transparent,rgba(200,180,255,.38),transparent); }
+    .od { width:3px; height:3px; border-radius:50%; background:rgba(220,200,255,.45); }
+
+    .oc-sym { font-size:2.1rem; line-height:1; filter:drop-shadow(0 0 10px rgba(200,170,255,.45)); animation:sF 5s ease-in-out infinite; }
+    @keyframes sF{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-4px) scale(1.05)}}
+    .oc-name { font-family:'Cinzel Decorative',serif; font-size:.44rem; color:rgba(220,200,255,.88); letter-spacing:.08em; text-align:center; line-height:1.5; padding:0 6px; text-shadow:0 0 8px rgba(200,170,255,.45); }
+    .oc-kw { font-style:italic; font-size:.66rem; color:rgba(240,210,230,.68); text-align:center; }
+    .oc-num { font-size:.48rem; color:rgba(200,180,255,.3); letter-spacing:.2em; }
+
+    /* ── INTERPRETATION ── */
+    .it-wrap { width:100%; max-width:680px; opacity:0; transform:translateY(14px); transition:opacity .7s,transform .7s; }
+    .it-wrap.visible { opacity:1; transform:translateY(0); }
+    .it-box {
+      position:relative; border-radius:16px; overflow:hidden;
+      background:linear-gradient(145deg,rgba(22,18,46,.96),rgba(20,16,50,.98));
+      border:1px solid rgba(180,160,224,.17); padding:2.2rem 2.4rem;
+      box-shadow:0 0 40px rgba(140,110,200,.07),0 20px 40px rgba(0,0,0,.4);
+    }
+    .it-box::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(to right,transparent,rgba(200,180,255,.38),rgba(240,200,220,.28),rgba(200,180,255,.38),transparent); }
+    .it-box::after  { content:''; position:absolute; bottom:0; left:0; right:0; height:1px; background:linear-gradient(to right,transparent,rgba(200,180,255,.13),transparent); }
+    .cg { position:absolute; width:80px; height:80px; border-radius:50%; filter:blur(30px); pointer-events:none; }
+    .cg-tl{top:-20px;left:-20px;background:rgba(180,140,255,.09);}
+    .cg-br{bottom:-20px;right:-20px;background:rgba(240,180,210,.07);}
+
+    .it-hdr { display:flex; align-items:center; gap:.8rem; margin-bottom:1.4rem; }
+    .it-ttl { font-family:'Cinzel Decorative',serif; font-size:.58rem; color:var(--lav); letter-spacing:.2em; white-space:nowrap; }
+    .it-ln  { flex:1; height:1px; background:linear-gradient(to right,rgba(180,160,224,.28),transparent); }
+
+    .it-text { font-size:1rem; line-height:1.95; color:var(--silver); font-style:italic; white-space:pre-wrap; position:relative; z-index:1; }
+    .it-loading { display:flex; align-items:center; gap:1rem; font-style:italic; color:var(--silver); opacity:.65; font-size:.88rem; }
+    .dots span { display:inline-block; width:5px; height:5px; background:var(--glav); border-radius:50%; margin:0 2px; animation:dp 1.5s ease-in-out infinite; }
+    .dots span:nth-child(2){animation-delay:.2s} .dots span:nth-child(3){animation-delay:.4s}
+    @keyframes dp{0%,60%,100%{transform:scale(.5);opacity:.3}30%{transform:scale(1.2);opacity:1}}
+
+    /* ── RESET ── */
+    .rw { text-align:center; margin-top:.5rem; padding-bottom:1rem; opacity:0; transition:opacity .6s ease .8s; }
+    .rw.visible { opacity:1; }
+    .rbtn {
+      padding:.7rem 2rem; border-radius:30px; border:1px solid rgba(180,160,224,.23);
+      background:transparent; color:var(--silver);
+      font-family:'Cormorant Garamond',serif; font-style:italic; font-size:.9rem; letter-spacing:.08em;
+      cursor:pointer; transition:all .3s;
+    }
+    .rbtn:hover { border-color:rgba(200,180,255,.48); color:var(--moon); background:rgba(180,140,255,.06); }
+
+    /* ── DIVIDER ── */
+    .div-rune { text-align:center; padding:1.5rem 0; font-size:.7rem; letter-spacing:.8rem; color:var(--mv); opacity:.3; position:relative; z-index:2; }
+
+    /* ── FOOTER ── */
+    footer { border-top:1px solid rgba(100,80,160,.1); padding:2.5rem 2rem; text-align:center; position:relative; z-index:2; }
+    .ft-logo { font-family:'Cinzel Decorative',serif; font-size:.72rem; color:var(--lav); margin-bottom:1rem; display:block; letter-spacing:.15em; }
+    .ft-links { display:flex; justify-content:center; gap:1.8rem; flex-wrap:wrap; margin-bottom:1rem; }
+    .ft-links a { font-style:italic; font-size:.8rem; color:var(--silver); text-decoration:none; opacity:.42; transition:opacity .3s; }
+    .ft-links a:hover { opacity:.88; color:var(--lav); }
+    .ft-copy { font-size:.68rem; color:var(--silver); opacity:.2; font-style:italic; }
+
+    @media(max-width:640px){
+      nav{padding:1rem 1.4rem;}
+      .page-title{font-size:clamp(1.3rem,7vw,1.8rem);}
+      .oc{width:118px;height:192px;}
+      .oc-sym{font-size:1.65rem;}
+      .oc-name{font-size:.4rem;}
+      .cards-row{gap:.65rem;}
+      .it-box{padding:1.5rem 1.1rem;}
+      .it-text{font-size:.9rem;}
+    }
+  </style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<canvas id="stars"></canvas>
+
+<nav>
+  <a class="nav-logo" href="index.html">Magical Chart</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Accueil</a></li>
+    <li><a href="oracle-debutant.html">Débuter</a></li>
+    <li><a href="meilleurs-oracles.html">Sélection</a></li>
+    <li><a href="utiliser-oracle.html">Utiliser</a></li>
+    <li><a href="a-propos.html">À propos</a></li>
+  </ul>
+  <button class="nav-burger" id="burger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<div class="wrapper">
+
+  <div class="page-header">
+    <p class="page-eyebrow">✦ Oracle Magical Chart ✦</p>
+    <h1 class="page-title">
+      Tirage de cartes
+      <small>laisse les cartes guider ton intuition</small>
+    </h1>
+    <p class="page-sub">Pose une intention dans ton cœur, choisis ton tirage, et laisse l'oracle te parler avec douceur.</p>
+    <div class="hdr-orn">
+      <div class="orn-l"></div>
+      <span class="orn-s">✦</span>
+      <span style="font-size:.9rem;opacity:.45">🌙</span>
+      <span class="orn-s">✦</span>
+      <div class="orn-l"></div>
+    </div>
+  </div>
+
+  <div class="spread-sec">
+    <p class="spread-lbl">— choisir un tirage —</p>
+    <div class="spread-opts">
+      <button class="sbtn active" data-n="1" onclick="selectSpread(1)">
+        Carte du jour <small>1 carte</small>
+      </button>
+      <button class="sbtn" data-n="3" onclick="selectSpread(3)">
+        Passé · Présent · Futur <small>3 cartes</small>
+      </button>
+      <button class="sbtn" data-n="5" onclick="selectSpread(5)">
+        Croix de lumière <small>5 cartes</small>
+      </button>
+    </div>
+  </div>
+
+  <div class="div-rune">✦ · · · ✦ · · · ✦</div>
+
+  <div class="oracle-area">
+
+    <!-- Deck -->
+    <div class="deck-cont" id="deck-cont">
+      <div class="deck-pile" id="deck" onclick="drawCards()" title="Cliquer pour tirer">
+        <div class="deck-shadow"></div>
+        <div class="dp-card">
+          <div class="dp-back">
+            <svg viewBox="0 0 130 210" fill="none">
+              <circle cx="65" cy="105" r="60" stroke="rgba(180,160,224,.48)" stroke-width=".7"/>
+              <circle cx="65" cy="105" r="42" stroke="rgba(180,160,224,.32)" stroke-width=".5"/>
+              <circle cx="65" cy="105" r="26" stroke="rgba(180,160,224,.22)" stroke-width=".5"/>
+              <path d="M65 44L65 166M5 105L125 105" stroke="rgba(180,160,224,.16)" stroke-width=".5"/>
+              <path d="M65 44L117 133L13 133Z" stroke="rgba(180,160,224,.1)" fill="none" stroke-width=".5"/>
+              <path d="M65 166L13 77L117 77Z" stroke="rgba(180,160,224,.1)" fill="none" stroke-width=".5"/>
+            </svg>
+          </div>
+        </div>
+        <div class="dp-card"><div class="dp-back"></div></div>
+        <div class="dp-card"><div class="dp-back"></div></div>
+        <div class="dp-card top">
+          <div class="dp-back">
+            <svg viewBox="0 0 130 210" fill="none">
+              <circle cx="65" cy="105" r="60" stroke="rgba(200,180,255,.52)" stroke-width=".8"/>
+              <circle cx="65" cy="105" r="44" stroke="rgba(200,180,255,.35)" stroke-width=".6"/>
+              <circle cx="65" cy="105" r="28" stroke="rgba(200,180,255,.22)" stroke-width=".5"/>
+              <path d="M65 44L65 166M5 105L125 105M17 57L113 153M113 57L17 153" stroke="rgba(200,180,255,.13)" stroke-width=".5"/>
+              <text x="58" y="110" font-size="12" fill="rgba(200,180,255,.52)" font-family="serif">✦</text>
+              <text x="56" y="38" font-size="7" fill="rgba(200,180,255,.38)">✦</text>
+              <text x="56" y="177" font-size="7" fill="rgba(200,180,255,.38)">✦</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="draw-cta">
+        <button class="draw-btn" onclick="drawCards()">☽ Révéler mes cartes ☾</button>
+        <p class="draw-hint">Concentre-toi sur une intention avant de tirer.</p>
+      </div>
+    </div>
+
+    <!-- Spread result -->
+    <div class="spread-layout" id="spread-layout">
+      <div class="cards-row" id="cards-row"></div>
+      <div class="it-wrap" id="it-wrap">
+        <div class="it-box">
+          <div class="cg cg-tl"></div>
+          <div class="cg cg-br"></div>
+          <div class="it-hdr">
+            <span class="it-ttl">✦ Lecture des cartes</span>
+            <div class="it-ln"></div>
+          </div>
+          <div id="it-content">
+            <div class="it-loading">
+              <span>L'oracle consulte les étoiles</span>
+              <div class="dots"><span></span><span></span><span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="rw" id="rw">
+        <button class="rbtn" onclick="resetDraw()">✦ Nouveau tirage ✦</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="div-rune">✦ · · · ✦ · · · ✦</div>
+
+<footer>
+  <span class="ft-logo">Magical Chart</span>
+  <div class="ft-links">
+    <a href="index.html">Accueil</a>
+    <a href="oracle-debutant.html">Débuter</a>
+    <a href="meilleurs-oracles.html">Sélection</a>
+    <a href="a-propos.html">À propos</a>
+    <a href="affiliation.html">Affiliation</a>
+  </div>
+  <p class="ft-copy">© 2025 Magical Chart — Tous droits réservés</p>
+</footer>
+
+<script>
+/* ══════════════════════════════════════════
+   ORACLE CARDS — Magical Chart
+   Pour ajouter une carte, copie un bloc et
+   remplis : id, name, symbol, keyword, meaning
+   ══════════════════════════════════════════ */
+const CARDS = [
+  { id:1,  name:"L'Étoile",                 symbol:"⭐", keyword:"Espoir & guidance",           meaning:"La lumière revient après les tempêtes. L'étoile te montre que le chemin est ouvert — fais confiance à l'avenir qui se dessine doucement devant toi." },
+  { id:2,  name:"La Lune",                  symbol:"🌙", keyword:"Intuition & mystère",          meaning:"Le voile entre les mondes se fait mince. Tes rêves et tes ressentis portent des messages précieux — écoute ce que la nuit te chuchote à l'oreille." },
+  { id:3,  name:"La Mort",                  symbol:"🥀", keyword:"Transformation & passage",     meaning:"Une page se tourne avec une grâce silencieuse. Ce qui finit ici nourrit ce qui renaît — la transformation en cours est nécessaire et profondément porteuse de sens." },
+  { id:4,  name:"La Pythie",                symbol:"🔮", keyword:"Prophétie & vision intérieure",meaning:"Tu touches la source de la connaissance ancienne. Une vérité plus profonde cherche à se faire entendre — mets en sourdine le mental et laisse parler l'oracle en toi." },
+  { id:5,  name:"La Tour",                  symbol:"⚡", keyword:"Révélation & bouleversement",  meaning:"Ce qui doit tomber tombe pour libérer. Un choc peut être une libération déguisée — ce qui se reconstruit après sera infiniment plus solide et plus vrai." },
+  { id:6,  name:"Le Fou",                   symbol:"🃏", keyword:"Liberté & commencement",       meaning:"L'élan du nouveau départ t'appelle de toute son âme. Ose sauter sans filet — la confiance aveugle en la vie est parfois le plus grand acte de sagesse qui soit." },
+  { id:7,  name:"Le Jugement",              symbol:"🔔", keyword:"Éveil & vocation",             meaning:"Un appel profond résonne dans ta poitrine. Il est temps d'honorer ce que tu es vraiment — de te lever et de répondre à ce qui te dépasse et t'élève." },
+  { id:8,  name:"Le Monde",                 symbol:"🌍", keyword:"Complétude & accomplissement", meaning:"Un cycle s'achève dans la plénitude. Tu as parcouru un chemin entier — accueille ce sentiment d'accomplissement avec toute la douceur qu'il mérite." },
+  { id:9,  name:"Le Soleil",                symbol:"☀️", keyword:"Joie & clarté éclatante",      meaning:"La lumière inonde tout sans demander permission. Une période de bonheur simple et franc s'ouvre — laisse-toi réchauffer et partage ta lumière sans retenue." },
+  { id:10, name:"La Fée des Vents",         symbol:"🧚", keyword:"Légèreté & magie douce",       meaning:"La magie souffle dans les petites choses du quotidien. Un vent de grâce traverse ta vie — sois légère et réceptive, et les dons viendront à toi naturellement." },
+  { id:11, name:"L'Esprit des Sables",      symbol:"🏜️", keyword:"Patience & profondeur cachée", meaning:"Sous la surface aride se cache une sagesse ancienne et vaste. Le temps est ton plus grand allié — ce qui mûrit lentement dans le silence porte les fruits les plus durables." },
+  { id:12, name:"L'Enfant des Marécages",   symbol:"🌿", keyword:"Acceptation & richesse cachée", meaning:"Ce qui paraît trouble recèle toujours une vie secrète et précieuse. Accueille tes zones d'ombre avec tendresse — elles contiennent des dons que tu n'as pas encore osé découvrir." },
+  { id:13, name:"Le Phœnix",               symbol:"🔥", keyword:"Renaissance & courage ardent",  meaning:"Des cendres, tu te relèves plus brillante qu'avant. Ce que tu traverses forge quelque chose d'indestructible en toi — la renaissance est déjà en marche, tu n'as qu'à la laisser venir." },
+  { id:14, name:"Le Dragon des Glaces",     symbol:"🐉", keyword:"Maîtrise & clarté tranchante",  meaning:"La clarté froide et précise est un don rare. Observe ta situation sans te laisser emporter par les émotions — la vérité est là, nette et libératrice comme l'air d'hiver." },
+  { id:15, name:"La Tisseuse d'Étoiles",   symbol:"✨", keyword:"Création & destinée tissée",    meaning:"Tu es l'artisane de ton propre chemin et de ton propre ciel. Chaque fil que tu tisses compte — tes choix d'aujourd'hui brodent la tapisserie lumineuse de demain." },
+  { id:16, name:"La Louve Lunaire",         symbol:"🐺", keyword:"Instinct & appartenance sacrée",meaning:"L'instinct est ta boussole la plus fiable dans la nuit. Fais confiance à ta nature profonde et à celles qui partagent ta route — l'union fait la force du clan." },
+  { id:17, name:"La Déesse des Marées",     symbol:"🌊", keyword:"Flux & lâcher-prise fluide",   meaning:"La mer ne résiste jamais à ses propres vagues. Laisse les choses venir et repartir naturellement — la fluidité est ta plus grande force en ce moment précis." },
+  { id:18, name:"La Sorcière",              symbol:"🌑", keyword:"Puissance intérieure & magie",  meaning:"Ta puissance n'a besoin d'aucune permission pour exister. Reconnecte-toi à ta magie personnelle — elle t'appartient depuis toujours, et il est grand temps de l'assumer pleinement." },
+  { id:19, name:"La Sirène",               symbol:"🧜", keyword:"Profondeur & vérité cachée",    meaning:"Les profondeurs révèlent ce que la surface dissimule soigneusement. Plonge sans crainte dans tes émotions les plus intimes — les plus grands trésors s'y cachent toujours." },
+  { id:20, name:"La Tempête",              symbol:"🌪️", keyword:"Purification & intensité vive", meaning:"Ce qui est secoué est aussi purifié. Laisse la tempête faire son œuvre nécessaire — elle dégage ce qui n'avait plus sa place pour que l'air frais entre enfin chez toi." },
+  { id:21, name:"L'Arbre Monde",           symbol:"🌳", keyword:"Ancrage & connexion vivante",   meaning:"Tes racines profondes nourrissent tes plus hautes branches. Plus tu t'ancres dans ce qui compte vraiment, plus tu peux t'élever et t'étirer vers la lumière qui t'attend." },
+  { id:22, name:"Le Cerf Sacré",           symbol:"🦌", keyword:"Grâce & douceur souveraine",   meaning:"La vraie force sait toujours être douce. Avance avec la grâce tranquille du cerf dans ta situation — la dignité calme attire bien plus que toute agitation." },
+  { id:23, name:"L'Oracle des Brumes",     symbol:"🌫️", keyword:"Mystère & révélation prochaine",meaning:"Ce qui semble flou se précisera bientôt, c'est promis. Reste dans l'ouverture plutôt que de forcer la clarté — les brumes se lèvent toujours d'elles-mêmes au bon moment." },
+  { id:24, name:"La Licorne Noire",        symbol:"🦄", keyword:"Unicité & chemin singulier",    meaning:"Tu es rare, et c'est ton plus grand cadeau au monde. Ce qui te distingue des autres est exactement ce dont le monde a besoin — n'essaie plus de rentrer dans un moule qui n'est pas le tien." },
+  { id:25, name:"La Méduse Céleste",       symbol:"💫", keyword:"Flottement & conscience élargie",meaning:"Laisse-toi porter par les courants bien plus grands que toi. Une conscience élargie est accessible en ce moment — observe tout depuis ton lieu de paix intérieure, sans te cramponner." },
+  { id:26, name:"L'Ancêtre des Forêts",   symbol:"🌲", keyword:"Sagesse ancestrale & racines",  meaning:"Les ancêtres te regardent avec un amour immense et patient. La sagesse de ceux qui t'ont précédée est accessible — tends l'oreille aux murmures qui viennent de très loin." },
+  { id:27, name:"Le Corbeau Prophète",     symbol:"🪶", keyword:"Message & présage important",   meaning:"Un signe cherche activement à te rejoindre. Reste attentive aux coïncidences, aux rêves, aux mots entendus par hasard — le corbeau porte un message précieux juste pour toi." },
+  { id:28, name:"Le Gardien des Volcans",  symbol:"🌋", keyword:"Puissance brute & passion vive",meaning:"Une énergie immense sommeille en toi comme un volcan assoupi. Quand elle s'exprime avec intention plutôt que dans l'emportement aveugle, elle peut tout créer." },
+  { id:29, name:"L'Enfant des Comètes",   symbol:"☄️", keyword:"Fulgurance & destinées croisées",meaning:"Certaines rencontres et inspirations sont fulgurants — et c'est exactement voulu. Ce qui arrive vite et fort en ce moment porte une signification particulière à ne pas négliger." },
+  { id:30, name:"Le Kraken Éternel",       symbol:"🐙", keyword:"Profondeurs & complexité sage",  meaning:"Ce qui paraît menaçant recèle souvent une sagesse abyssale et précieuse. Embrasse la complexité de ta situation plutôt que de la simplifier — les réponses vivent dans les profondeurs." },
+  { id:31, name:"Le Chaman des Neiges",   symbol:"❄️", keyword:"Méditation & vision limpide",   meaning:"Dans le silence blanc et pur, tout devient limpide. Un temps de retraite intérieure te permettra de voir avec une clarté remarquable ce que le bruit du quotidien masquait jusqu'ici." },
+  { id:32, name:"Le Sphinx Céleste",       symbol:"🦁", keyword:"Énigme & invitation à chercher", meaning:"Une question attend patiemment d'être résolue en toi. Le sphinx te demande de regarder ta situation sous un angle entièrement différent — la réponse est souvent dans la question elle-même." },
+  { id:33, name:"L'Araignée des Rêves",   symbol:"🕸️", keyword:"Tissage & synchronicités",      meaning:"Tout est lié, rien n'est jamais un pur hasard. Les fils invisibles qui relient les événements de ta vie dessinent une toile pleine de sens — observe le motif d'ensemble." },
+  { id:34, name:"L'Alchimiste des Pluies", symbol:"🌧️", keyword:"Transmutation & patience d'or", meaning:"Chaque épreuve se transmute lentement en or pur. Le processus en cours te transforme de l'intérieur d'une façon que tu ne mesures pas encore — fais confiance à l'alchimie qui œuvre doucement." },
+  { id:35, name:"La Gardienne du Voile",  symbol:"🪄", keyword:"Protection & passage sacré",     meaning:"Tu es protégée au seuil entre les mondes, veillée par une présence bienveillante. Un passage important se prépare doucement — sache que tu n'es absolument pas seule dans cette traversée." },
+  { id:36, name:"La Baleine des Étoiles", symbol:"🐋", keyword:"Immensité & navigation cosmique",meaning:"Tu navigues dans des eaux infiniment plus vastes que toi — et c'est d'une beauté bouleversante. Laisse-toi porter par quelque chose qui dépasse largement ta compréhension actuelle." },
+];
+
+/* Positions labels */
+const POSITIONS = {
+  1: ["Ton message du jour"],
+  3: ["Ce qui était", "Ce qui est", "Ce qui vient"],
+  5: ["La situation", "Ce qui te freine", "Conseil de l'oracle", "Ce qui se clôt", "Ce qui émerge"]
+};
+
+/* State */
+let currentN = 1, drawn = [], busy = false;
+
+/* Cursor */
+const $cur = document.getElementById('cursor');
+if (window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
+  document.addEventListener('mousemove', e => {
+    $cur.style.left = e.clientX-5+'px'; $cur.style.top = e.clientY-5+'px';
+  });
+}
+
+/* Stars */
+const cv = document.getElementById('stars'), cx = cv.getContext('2d');
+const rsz = () => { cv.width=innerWidth; cv.height=innerHeight; };
+rsz(); window.addEventListener('resize', rsz);
+const ST = Array.from({length:200},()=>({
+  x:Math.random(),y:Math.random(),r:Math.random()*1.3+.2,a:Math.random(),
+  s:Math.random()*.006+.002,d:Math.random()>.5?1:-1,
+  h:Math.random()>.7?300:Math.random()>.5?260:220
+}));
+(function tick(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  ST.forEach(s=>{
+    s.a+=s.s*s.d; if(s.a>1||s.a<.04)s.d*=-1;
+    cx.beginPath(); cx.arc(s.x*cv.width,s.y*cv.height,s.r,0,Math.PI*2);
+    cx.fillStyle=`hsla(${s.h},50%,85%,${s.a})`; cx.fill();
+  });
+  requestAnimationFrame(tick);
+})();
+
+/* Spread select */
+function selectSpread(n) {
+  currentN = n;
+  document.querySelectorAll('.sbtn').forEach(b => b.classList.toggle('active', +b.dataset.n===n));
+  if (busy) resetDraw();
+}
+
+/* Pick */
+function pickCards(n) { return [...CARDS].sort(()=>Math.random()-.5).slice(0,n); }
+
+/* Sleep */
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+
+/* Draw */
+async function drawCards() {
+  if (busy) return;
+  busy = true;
+  drawn = pickCards(currentN);
+
+  const dc = document.getElementById('deck-cont');
+  dc.style.transition='opacity .45s ease'; dc.style.opacity='0';
+  await sleep(460);
+  dc.style.display='none';
+
+  const sl = document.getElementById('spread-layout');
+  sl.classList.add('visible');
+
+  const row = document.getElementById('cards-row');
+  row.innerHTML = '';
+
+  drawn.forEach((card, i) => {
+    const w = document.createElement('div');
+    w.className = 'oc-wrap';
+    w.innerHTML = cardHTML(card, POSITIONS[currentN][i], i+1);
+    row.appendChild(w);
+    setTimeout(()=>{ w.classList.add('shown'); seedStars(i+1); }, 180+i*310);
+  });
+
+  const d2 = 200+drawn.length*310+460;
+  setTimeout(()=>{ document.getElementById('it-wrap').classList.add('visible'); }, d2);
+  setTimeout(()=>{ fetchInterp(); }, d2+200);
+}
+
+/* Card HTML */
+function cardHTML(card, pos, idx){
+  return `
+    <div class="pos-lbl">${pos}</div>
+    <div class="oc">
+      <div class="oc-fo"></div><div class="oc-fi"></div>
+      <div class="oc-nb nb1"></div><div class="oc-nb nb2"></div><div class="oc-nb nb3"></div>
+      <div class="oc-st" id="cs${idx}"></div>
+      <div class="oc-cnt">
+        <div class="oc-orn"><div class="ol"></div><div class="od"></div><div class="ol"></div></div>
+        <div class="oc-sym">${card.symbol}</div>
+        <div class="oc-name">${card.name}</div>
+        <div class="oc-kw">${card.keyword}</div>
+        <div class="oc-orn">
+          <div class="ol"></div>
+          <span class="oc-num">${String(card.id).padStart(2,'0')}</span>
+          <div class="od"></div>
+          <span class="oc-num">${String(card.id).padStart(2,'0')}</span>
+          <div class="ol"></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function seedStars(idx) {
+  const el = document.getElementById('cs'+idx);
+  if (!el) return;
+  for (let i=0;i<28;i++){
+    const s=document.createElement('div');
+    s.style.cssText=`position:absolute;border-radius:50%;background:white;width:${Math.random()*1.3+.4}px;height:${Math.random()*1.3+.4}px;top:${Math.random()*100}%;left:${Math.random()*100}%;opacity:${Math.random()*.45+.1};`;
+    el.appendChild(s);
+  }
+}
+
+/* AI Interpretation */
+async function fetchInterp() {
+  const pos = POSITIONS[currentN];
+  const names = {1:'tirage carte du jour',3:'tirage passé-présent-futur',5:'tirage en croix de lumière'};
+  const txt = drawn.map((c,i)=>`Position "${pos[i]}" : ${c.name} (${c.keyword}) — ${c.meaning}`).join('\n');
+
+  const prompt = `Tu es l'oracle bienveillant de Magical Chart, un oracle poétique et doux qui guide les âmes avec tendresse et sagesse.
+
+Voici les cartes tirées pour un ${names[currentN]} :
+
+${txt}
+
+Rédige une interprétation complète, fluide et poétique de ce tirage en français. Commence par une phrase d'ouverture douce et imagée. Relie les cartes entre elles en une lecture cohérente et bienveillante. Termine par un message d'encouragement chaleureux.
+
+Style : poétique, intime, doux comme la lumière de la lune. Jamais alarmant. Toujours bienveillant.
+Longueur : 150 à 200 mots. Texte fluide et continu — pas de titre, pas de liste.`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model:"claude-sonnet-4-20250514",
+        max_tokens:1000,
+        messages:[{role:"user",content:prompt}]
+      })
+    });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    const text = data.content.map(b=>b.text||'').join('');
+    document.getElementById('it-content').innerHTML = `<p class="it-text">${text}</p>`;
+  } catch {
+    const pos2 = POSITIONS[currentN];
+    document.getElementById('it-content').innerHTML =
+      `<p class="it-text" style="opacity:.85">` +
+      drawn.map((c,i)=>`<em style="color:var(--rose);opacity:.88">${pos2[i]}</em> — <strong style="color:var(--lilac)">${c.name}</strong><br>${c.meaning}`).join('<br><br>') +
+      `</p>`;
+  }
+  setTimeout(()=>{ document.getElementById('rw').classList.add('visible'); }, 600);
+}
+
+/* Reset */
+function resetDraw() {
+  busy=false; drawn=[];
+  const sl=document.getElementById('spread-layout');
+  sl.classList.remove('visible');
+  document.getElementById('it-content').innerHTML=`<div class="it-loading"><span>L'oracle consulte les étoiles</span><div class="dots"><span></span><span></span><span></span></div></div>`;
+  document.getElementById('rw').classList.remove('visible');
+  document.getElementById('it-wrap').classList.remove('visible');
+  document.getElementById('cards-row').innerHTML='';
+  const dc=document.getElementById('deck-cont');
+  dc.style.display='flex'; dc.style.opacity='0';
+  requestAnimationFrame(()=>{ dc.style.transition='opacity .5s'; dc.style.opacity='1'; });
+}
+
+/* Burger */
+document.getElementById('burger').addEventListener('click',function(){ this.classList.toggle('open'); });
+</script>
+</body>
+</html>
